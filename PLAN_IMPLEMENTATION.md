@@ -29,6 +29,7 @@ res://
 │   └── biomes/                # *.tres (BiomeData)
 ├── scripts/
 │   ├── core/                  # autoloads, helpers, RNG, événements
+│   ├── resources/             # définitions des schémas Resource (SpellData, ItemBaseData...)
 │   ├── grid/                  # grille, pathfinding, ligne de vue
 │   ├── combat/                # machine à états, tours, actions (Command)
 │   ├── entities/              # personnage, monstre, objet de terrain
@@ -143,7 +144,7 @@ Tâches :
 **Objectif** : lancer des sorts définis entièrement en données, avec ciblage, zones d'effet et prévisualisation.
 
 Tâches :
-1. `scripts/items/resources/spell_data.gd` (`class_name SpellData`, `Resource`) :
+1. `scripts/resources/spell_data.gd` (`class_name SpellData`, `Resource`) — les définitions de schémas `Resource` vivent dans `scripts/resources/`, les fichiers de données `.tres` dans `res://data/` :
    ```
    id, display_name_key, icon, element (enum FIRE/WATER/AIR/EARTH/LIGHT/SHADOW),
    mana_cost, energy_cost, range_min, range_max, needs_los, range_modifiable,
@@ -355,7 +356,7 @@ Tâches :
 **Objectif** : la coop, en capitalisant sur l'architecture Command.
 
 Tâches :
-1. API multiplayer haut niveau Godot (ENet) : **hôte autoritaire** ; les invités envoient leurs `CombatAction` sérialisées (déjà prêtes depuis la Phase 3), l'hôte valide/exécute/rediffuse.
+1. API multiplayer **Godot 4** : `ENetMultiplayerPeer` + `MultiplayerAPI` (RPCs `@rpc`), avec `MultiplayerSpawner`/`MultiplayerSynchronizer` pour la réplication de scène (ne PAS utiliser les patterns Godot 3). **Hôte autoritaire** : les invités envoient leurs `CombatAction` sérialisées (déjà prêtes depuis la Phase 3), l'hôte valide/exécute/rediffuse.
 2. Lobby simple : héberger / rejoindre par IP ou code (pas de matchmaking).
 3. Exploration synchronisée (positions, spawns, météo, seed partagée) ; combat : jusqu'à 4 joueurs dans la timeline, chacun jouant son tour (les autres voient les previews de l'actif).
 4. **Agonie coop** (GDD §6.2) : 2 tours pour ranimer, sorts/consommables de résurrection.
@@ -387,11 +388,13 @@ Tâches :
   "payload": { ... } , "seq": int }
 
 # Sauvegarde (JSON, 1 fichier par personnage)
+# NB : partout ci-dessous, "ItemInstance" désigne la forme Dictionary sérialisée
+# définie plus haut (jamais une référence d'objet GDScript).
 { "version": int, "checksum": String, "world_seed": int,
   "character": { "class_id", "level", "xp", "stats", "masteries", "recipes",
-                  "position", "equipment": {slot: ItemInstance},
-                  "inventory": [ItemInstance] },
-  "stash": [ItemInstance], "camp": {...}, "clock": {...} }
+                  "position", "equipment": { "<slot>": <ItemInstance dict> },
+                  "inventory": [ <ItemInstance dict> ] },
+  "stash": [ <ItemInstance dict> ], "camp": {...}, "clock": {...} }
 ```
 
 ## Annexe B — Ordre de bataille résumé
