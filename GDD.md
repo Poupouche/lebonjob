@@ -1,99 +1,119 @@
-# Game Design Document — Projet « Sans Titre » (nom de code : **AEGIS**)
+# Game Design Document — Projet **AEGIS** (nom de code)
 
-> **Version** : 0.1 (premier jet — à affiner avec les réponses aux questions du chapitre 15)
+> **Version** : 1.0 (décisions actées — voir §14)
 > **Plateforme** : PC (Windows / Linux / macOS)
-> **Moteur** : Godot 4.x
-> **Genre** : RPG tactique tour par tour, monde persistant, factions, hardcore/full-loot, loot à affixes procéduraux, environnements de combat interactifs
+> **Moteur** : Godot 4.x (GDScript + C#)
+> **Genre** : RPG tactique tour par tour, solo / coop 4 joueurs (PvM), hardcore full-loot, loot à affixes procéduraux, monde continu procédural, environnements de combat interactifs
+> **Direction artistique** : pixel art — médiéval-fantasy avec twist steampunk et mythologies scandinave & asiatique
+> **Document compagnon** : [`PLAN_IMPLEMENTATION.md`](PLAN_IMPLEMENTATION.md) — étapes de codage précises, à donner à une IA de développement.
 
 ---
 
 ## 1. Vision & concept
 
 ### 1.1 Pitch
-**AEGIS** est un RPG tour par tour sur grille (inspiré de **Dofus**) dans un monde ouvert et dangereux où trois factions se disputent territoires et ressources (inspiré d'**Albion Online**). La mort y a un vrai poids : dans les zones à haut risque, le joueur perd son équipement (**full loot**) et peut activer un mode **hardcore** (mort permanente). Le loot est généré procéduralement avec des **affixes** aléatoires (inspiré de **Diablo**), et chaque combat se joue dans un **environnement interactif** : surfaces élémentaires, objets déplaçables/destructibles, hauteur, pièges (inspiré de **D&D** / **Divinity: Original Sin 2**).
+**AEGIS** est un RPG tactique tour par tour sur grille isométrique (inspiré de **Dofus/Wakfu**), jouable en **solo ou en coop jusqu'à 4 joueurs**, dans un **monde continu généré procéduralement**. Le jeu est **hardcore dès la première minute** : à la mort, tout l'équipement porté et l'inventaire transporté sont **perdus à jamais**. Le loot est généré procéduralement avec des **affixes** aléatoires (inspiré de **Diablo**), et chaque combat exploite un **environnement interactif** : surfaces élémentaires, météo, objets déplaçables/destructibles, pièges (inspiré de **D&D** / **Divinity: Original Sin 2**).
 
 ### 1.2 Piliers de design
-1. **Le combat est un puzzle** — chaque tour offre des choix tactiques riches : placement, PA/PM, combos élémentaires, exploitation du décor.
-2. **Le risque donne de la valeur** — plus une zone est dangereuse, meilleures sont les récompenses ; la peur de perdre son stuff crée la tension et l'économie.
-3. **Le loot raconte une histoire** — chaque objet est unique grâce aux affixes procéduraux ; trouver, crafter et perdre des objets alimente une économie vivante.
-4. **Le monde appartient aux factions** — le territoire, les ressources et la politique sont façonnés par les joueurs, pas par des scripts.
+1. **Le combat est un puzzle** — chaque tour offre des choix tactiques riches : placement, gestion Mana/Énergie, combos élémentaires, exploitation du décor et de la météo.
+2. **Le risque donne de la valeur** — hardcore full-loot permanent : la peur de perdre son stuff crée la tension ; le craft garantit toujours un équipement « potable » pour repartir.
+3. **Le loot raconte une histoire** — chaque objet est unique grâce aux affixes procéduraux ; le **drop domine** et la chasse aux affixes parfaits est le moteur de l'endgame.
+4. **La classe ET l'arme définissent le gameplay** — kit de sorts fixe par classe + sorts dépendants de l'arme équipée, différents selon la classe (matrice classe × arme, inspirée de Wakfu et d'Albion).
 
 ### 1.3 Fantasme joueur
-« Je pars en expédition en zone rouge avec mon groupe, je risque tout ce que je porte, je gagne des combats tactiques en retournant le décor contre mes ennemis, et je reviens (peut-être) avec un objet légendaire aux affixes parfaits. »
+« Je pars en expédition avec mes 3 amis, je risque tout ce que je porte, je gagne des combats tactiques en retournant le décor contre les monstres, et je reviens (peut-être) avec un objet légendaire aux affixes parfaits. Si je meurs, je perds tout — mais je re-crafte un kit correct et j'y retourne. »
 
 ### 1.4 Public cible
 - Joueurs de RPG tactiques (Dofus, Wakfu, Divinity, Baldur's Gate 3).
-- Joueurs de MMO sandbox à économie joueur (Albion, EVE).
+- Joueurs de roguelikes/hardcore qui aiment le risque permanent.
 - Joueurs de hack'n'slash amateurs de theorycraft d'objets (Diablo, Path of Exile).
+
+### 1.5 Modèle & périmètre
+- **Free-to-play** (monétisation à définir plus tard, hors périmètre du premier jouable).
+- **Pas de MMO ni de factions** : le mode faction/territoires à la Albion est abandonné (trop ambitieux). Le jeu est **PvM** (joueurs contre monstres).
+- **Premier livrable : prototype local solo** (voir `PLAN_IMPLEMENTATION.md`), la coop en ligne à 4 vient ensuite.
 
 ---
 
 ## 2. Boucle de gameplay
 
 ### 2.1 Boucle courte (minute)
-Explorer → engager un combat tour par tour → exploiter le terrain → looter → gérer inventaire/poids.
+Explorer le monde continu → engager un combat tour par tour → exploiter le terrain et la météo → looter → gérer inventaire/poids.
 
 ### 2.2 Boucle moyenne (session)
-Préparer un « loadout » (équipement qu'on accepte de perdre) → partir en expédition (PvE/PvM ou PvP) → rapporter butin et ressources en zone sûre → crafter / améliorer / vendre.
+Préparer un « loadout » au camp de base (équipement qu'on accepte de perdre) → partir en expédition (solo ou coop 4) → rapporter butin et ressources au camp → crafter / stocker / améliorer.
 
 ### 2.3 Boucle longue (semaines)
-Progression du personnage (niveaux, sorts, maîtrises) → progression de la faction (territoires, guerres, avant-postes) → progression économique (marchés, artisanat de haut niveau) → chasse aux affixes parfaits (endgame).
+Progression du personnage (niveaux 1→100 en ~1 mois, sorts, maîtrises) → progression du camp de base (ateliers de craft, coffre) → chasse aux affixes parfaits et aux légendaires (endgame) → biomes et donjons procéduraux de difficulté croissante.
 
 ---
 
-## 3. Système de combat tour par tour (type Dofus)
+## 3. Système de combat tour par tour
 
 ### 3.1 Structure
-- **Combat instancié sur grille** : quand un combat démarre, la zone de la carte devient une **arène tactique en grille** (cases carrées par défaut — voir question Q3.1 pour l'option isométrique/hexagonale).
-- **Phase de placement** : avant le tour 1, chaque camp choisit ses cases de départ parmi des cases de placement.
-- **Tour par tour séquentiel** : l'ordre d'initiative est déterminé par la statistique *Initiative* ; timer de tour (30 s par défaut, configurable).
-- **Taille des combats** : 1v1 jusqu'à 5v5 (groupes) ; monstres en groupes de 1 à 8.
+- **Grille isométrique en losange** (type Dofus). En exploration le monde est continu ; quand un combat démarre, la zone locale devient une **arène tactique en grille** générée à partir du décor réel (obstacles, objets interactifs, surfaces, météo du moment).
+- **Phase de placement** : avant le tour 1, chaque joueur choisit sa case de départ parmi des cases de placement.
+- **Tour par tour strictement séquentiel par personnage** : ordre déterminé par l'*Initiative*.
+- **Timer de tour long : 2 minutes par tour de chaque joueur** (le jeu est réfléchi, pas nerveux). Les monstres jouent sans timer perceptible (IA).
+- **Taille des combats : jusqu'à 4 joueurs contre jusqu'à 10 unités ennemies.**
+- Combats **verrouillés** (pas de « join in progress ») pour le premier périmètre.
 
-### 3.2 Ressources d'action
+### 3.2 Ressources du personnage
 | Ressource | Rôle | Base |
 |---|---|---|
-| **PA** (Points d'Action) | Lancer des sorts / utiliser des objets | 6 |
-| **PM** (Points de Mouvement) | Se déplacer d'une case | 3 |
-| **PW** (Points de Volonté) | Ressource rare pour capacités ultimes / interactions majeures avec le décor | 1 (regagné tous les 2 tours) |
+| **Vie (PV)** | Points de vie ; à 0 → mort (hardcore, voir §6) | selon classe/niveau |
+| **Mana** | Lancer des sorts et capacités | 6 / tour |
+| **Énergie** | Se déplacer (1 case = 1 Énergie) et **interagir avec le décor** (pousser un tonneau, actionner un levier, escalader) | 3 / tour |
 
-- PA/PM sont **buffables/débuffables** (retrait PA/PM avec jets d'esquive, comme Dofus).
-- Les interactions avec l'environnement coûtent des PA (pousser un rocher : 3 PA) ou des PW (effondrer un pilier : 1 PW).
+- Mana/Énergie se **régénèrent intégralement en début de tour** ; buffables/débuffables (retrait avec jet de résistance, à la Dofus).
+- Les interactions décor coûtent de l'Énergie (ex. pousser un tonneau : 2 Énergie ; actionner un levier : 1 Énergie) — le joueur arbitre en permanence entre **bouger** et **manipuler le terrain**.
 
-### 3.3 Sorts et écoles
-- Chaque classe possède ~20 sorts, débloqués par niveau.
-- Sorts définis par : coût PA, portée (min/max, modifiable, ligne de vue oui/non), zone d'effet (croix, ligne, cercle...), relance, effets.
-- **Écoles élémentaires** : Feu, Eau, Air, Terre + Lumière/Ombre (soutien/entrave). Les éléments interagissent avec les **surfaces** (voir §5).
+### 3.3 Sorts
+- Sorts définis par : coût en Mana (parfois en Énergie), portée (min/max, modifiable, ligne de vue oui/non), zone d'effet (croix, ligne, cercle, cône), relance (cooldown), limite par tour/cible, effets.
+- **Écoles élémentaires** : Feu, Eau, Air, Terre + Lumière/Ombre (soutien/entrave). Les éléments interagissent entre eux, avec les **surfaces** et avec la **météo** (voir §5) — les combos inter-sorts et inter-joueurs sont un pilier (référence Wakfu).
+- Certains sorts **manipulent le décor à distance** : téléportation d'objets (caisses, tonneaux), attirance/poussée, création de surfaces.
 
 ### 3.4 Statistiques principales
-- **Vitalité** (PV), **Force** (dégâts Terre + poids portable), **Intelligence** (dégâts Feu + soins), **Chance** (dégâts Eau + prospection/loot), **Agilité** (dégâts Air + tacle/fuite + initiative), **Sagesse** (XP + résistance retrait PA/PM).
-- Résistances élémentaires (%) et fixes, dommages critiques, tacle/fuite, portée, invocations.
+- **Vitalité** (PV), **Force** (dégâts Terre + poids portable), **Intelligence** (dégâts Feu + soins), **Chance** (dégâts Eau + prospection/loot), **Agilité** (dégâts Air + tacle/fuite + initiative), **Sagesse** (XP + résistance aux retraits Mana/Énergie).
+- Résistances élémentaires (%) et fixes, dégâts critiques, tacle/fuite, portée, invocations.
 
 ### 3.5 Tacle, ligne de vue, prévisualisation
-- **Tacle/Fuite** : quitter une case adjacente à un ennemi coûte PA/PM selon un rapport tacle-fuite.
-- **Ligne de vue** bloquée par obstacles hauts (et par certaines invocations/objets du décor).
+- **Tacle/Fuite** : quitter une case adjacente à un ennemi coûte Mana/Énergie selon un rapport tacle-fuite.
+- **Ligne de vue** bloquée par obstacles hauts, certaines invocations, fumées.
 - **Prévisualisation systématique** : dégâts estimés, cases atteignables, trajectoires de poussée, propagation de surfaces — le joueur ne doit jamais être puni par un manque d'information.
 
 ---
 
-## 4. Classes & progression
+## 4. Classes, armes & progression
 
-### 4.1 Classes de lancement (5, extensibles)
-| Classe | Fantasme | Rôle principal |
-|---|---|---|
-| **Bastion** | Chevalier tacticien | Tank, contrôle de zone, attirance/poussée |
-| **Pyromant** | Mage des flammes et surfaces | Dégâts de zone, ignition du décor |
-| **Sylve** | Archer druidique | Dégâts à distance, pièges, ronces (créées sur le terrain) |
-| **Ombrelame** | Assassin | Burst mono-cible, mobilité, invisibilité |
-| **Oracle** | Soutien | Soins, buffs PA/PM, manipulation de l'initiative |
+### 4.1 Système hybride « classe × arme »
+Le cœur de l'identité du jeu (décision Q1.2/Q4.1) :
+- Chaque classe possède un **kit fixe de sorts de classe** (~12 sorts, débloqués par niveau), construits autour d'une **mécanique de classe forte** (référence Wakfu : chaque classe tourne autour de sa mécanique).
+- **Toutes les classes peuvent équiper toutes les armes**, mais chaque **archétype d'arme** (épée, arc, bâton, dague, marteau, focus…) accorde **des sorts d'arme différents selon la classe**.
+  - Exemple : avec une **épée**, le **Pyromant** obtient « Épée magique » (frappe enflammée créant une surface de feu), tandis que le **Sylve** obtient « Estoc » (perce-armure à ronces).
+- La variété totale de sorts = (nb de classes) × (nb d'archétypes d'armes) + kits fixes → la profondeur de build vient du **choix d'arme** autant que de la classe, ce qui se marie avec le full-loot (perdre son arme change réellement le gameplay).
 
-### 4.2 Progression
-- **Niveaux 1 → 100** ; points de caractéristiques à répartir + variantes de sorts (chaque sort a 2 variantes exclusives, à la Dofus 2.0/Wakfu).
-- **Maîtrises horizontales** : arbres secondaires (artisanat, survie, faction) progressant à l'usage (à l'Albion) — pas de niveau requis pour s'équiper, mais des **paliers de maîtrise d'arme/armure**.
-- En **hardcore**, la progression du *compte* (recettes connues, maîtrises partielles, réputation) survit partiellement à la mort du personnage (voir §7.4).
+### 4.2 Classes de lancement (5, extensibles)
+| Classe | Fantasme | Rôle principal | Mécanique de classe |
+|---|---|---|---|
+| **Bastion** | Chevalier tacticien | Tank, contrôle de zone | **Rempart** : génère et consume de l'armure en poussant/attirant |
+| **Pyromant** | Mage des flammes | Dégâts de zone, ignition du décor | **Surchauffe** : jauge qui monte à chaque sort de feu, débloque des versions améliorées mais risque l'auto-brûlure |
+| **Sylve** | Archer druidique | Dégâts à distance, zoning | **Ronces** : plante des ronces sur le terrain qui alimentent ses sorts |
+| **Ombrelame** | Assassin | Burst mono-cible, mobilité | **Ombres** : pose des marques/clones téléporteurs |
+| **Oracle** | Soutien | Soins, buffs Mana/Énergie | **Prescience** : manipule l'ordre d'initiative et « voit » un tour à l'avance |
+
+### 4.3 Archétypes d'armes de lancement (6)
+Épée (mêlée polyvalente), Dague (mêlée burst), Marteau (mêlée zone/poussée), Arc (distance physique), Bâton (distance élémentaire), Focus (soutien/utilitaire). Chaque archétype donne **2 sorts d'arme** par classe → 5 classes × 6 armes × 2 sorts = 60 sorts d'arme + 5 × 12 sorts de classe = **120 sorts** à terme (le prototype en implémente un sous-ensemble, voir plan).
+
+### 4.4 Progression
+- **Niveaux 1 → 100**, endgame atteignable en **~1 mois** de jeu régulier.
+- Points de caractéristiques à répartir + **variantes de sorts** (chaque sort de classe a 2 variantes exclusives, à la Wakfu).
+- **Maîtrises à l'usage** : maîtrises d'archétype d'arme et d'artisanat progressant en les utilisant (à l'Albion).
+- La progression du personnage (niveaux, maîtrises, recettes) **survit à la mort** — seul l'équipement/inventaire est perdu (voir §6).
 
 ---
 
-## 5. Environnement interactif en combat (type D&D / DOS2)
+## 5. Environnement interactif en combat
 
 ### 5.1 Surfaces élémentaires
 | Surface | Création | Effets | Interactions |
@@ -101,247 +121,185 @@ Progression du personnage (niveaux, sorts, maîtrises) → progression de la fac
 | **Feu** | sorts de feu, braseros renversés | dégâts/tour, brûlure | + Eau → Vapeur ; + Huile → explosion |
 | **Eau** | sorts d'eau, tonneaux, pluie | mouillé (vulnérable foudre, éteint le feu) | + Froid → Glace ; + Feu → Vapeur |
 | **Glace** | eau gelée | glissade (trajectoire forcée), -fuite | + Feu → Eau |
-| **Huile** | tonneaux, sols de donjon | -PM, inflammable | + Feu → nappe de feu |
+| **Huile** | tonneaux, sols de donjon | -Énergie, inflammable | + Feu → nappe de feu |
 | **Poison** | sorts, créatures | dégâts/tour, empoisonné | + Feu → nuage toxique explosif |
 | **Vapeur/Fumée** | combinaisons | bloque la ligne de vue | dissipée par le vent (sorts d'air) |
 
-### 5.2 Objets de terrain
-- **Poussable/attirable** : rochers, caisses, tonneaux (peuvent écraser : dégâts de collision, comme les poussées Dofus contre un mur).
+### 5.2 Météo dynamique (décision Q3.1)
+La météo du monde s'applique aux combats qui s'y déclenchent :
+| Météo | Effet en combat |
+|---|---|
+| **Pluie** | crée/étend des surfaces d'eau, affaiblit le feu, renforce la foudre |
+| **Neige/Gel** | l'eau gèle en fin de tour, -fuite global |
+| **Canicule** | surfaces d'eau s'évaporent, feu se propage plus loin |
+| **Brouillard** | portée de ligne de vue réduite |
+| **Tempête** | vent : les projectiles/poussées dévient d'une case, fumées dissipées |
+
+### 5.3 Objets de terrain
+- **Poussable/attirable/téléportable** : rochers, caisses, tonneaux (dégâts de collision contre mur/entité ; certains sorts de classe téléportent des objets).
 - **Destructible** : murets, piliers, portes — détruire ouvre des lignes de vue, effondrer inflige des dégâts de zone.
 - **Déclencheurs** : leviers, plaques de pression, pièges (désamorçables), braseros, lustres à faire tomber.
-- **Hauteur** : cases surélevées = +portée et +10 % de dégâts vers le bas ; escalade coûte des PM supplémentaires.
+- **Hauteur (légère)** : cases surélevées = +1 portée et +10 % de dégâts vers le bas ; escalade coûte +1 Énergie. (2D isométrique : hauteur limitée à 1–2 niveaux pour rester lisible.)
 
-### 5.3 Règles de conception des arènes
-- Chaque arène doit contenir **au moins 3 éléments interactifs exploitables par les deux camps**.
-- Les monstres **utilisent aussi l'environnement** (IA : évaluation des surfaces et poussées dans l'arbre de décision).
-- Les cartes du monde ouvert génèrent leurs arènes à partir du décor réel à l'endroit du combat (biome → set d'obstacles et de surfaces).
-
----
-
-## 6. Factions & territoire (type Albion)
-
-### 6.1 Les trois factions
-Trois factions jouables et irréconciliables (noms de travail) :
-- **Le Concordat** — ordre, loi, cité-forteresse.
-- **La Marée** — marchands, pirates, économie libre.
-- **Les Racines** — druides, tribus, symbiose avec le monde sauvage.
-
-Le choix de faction se fait vers le niveau 10 ; en changer est coûteux (perte de réputation, quarantaine).
-
-### 6.2 Territoires
-- La carte du monde est découpée en **régions revendicables** contenant des ressources rares, des donjons et des **avant-postes**.
-- **Capture** : événements de siège planifiés (fenêtres horaires) où les combats se résolvent en **batailles tour par tour en escouades** (série de combats 5v5 sur des points de contrôle).
-- Une région contrôlée donne à sa faction : bonus de récolte, accès à des artisans exclusifs, taxes de marché.
-
-### 6.3 Réputation & guerre
-- Réputation individuelle par faction : gagnée en missions, escortes, PvP de faction ; perdue en tuant des membres de sa propre faction (statut **hors-la-loi**).
-- Guerres de faction : objectifs saisonniers (saisons de ~3 mois) avec classements et récompenses cosmétiques/titres.
+### 5.4 Règles de conception des arènes
+- Chaque arène (générée procéduralement à partir du décor local) doit contenir **au moins 3 éléments interactifs exploitables par les deux camps**.
+- **Les monstres exploitent l'environnement dès le MVP** (décision Q3.3) : l'IA évalue surfaces, poussées et objets dans son arbre de décision, selon les actions dont chaque monstre dispose.
 
 ---
 
-## 7. Zones de danger, full loot & hardcore
+## 6. Hardcore & mort (full-loot permanent)
 
-### 7.1 Zonage (règles à la Albion)
-| Zone | PvP | Perte à la mort | Récompenses |
-|---|---|---|---|
-| **Bleue** (sûre) | impossible | aucune (réparation d'équipement) | faibles |
-| **Jaune** | duel/consenti | durabilité + partie des ressources transportées | moyennes |
-| **Rouge** | ouvert entre factions | **full loot** (tout l'équipement + inventaire lootables) | élevées |
-| **Noire** | ouvert à tous (même faction) | full loot + pas de karma | maximales, ressources endgame |
+### 6.1 Règle centrale (décision Q6.1/Q6.3)
+**Le hardcore s'applique partout, dès le début du jeu, sans filet de sécurité** :
+- À la mort (PV à 0 en combat sans résurrection alliée avant la fin du combat), **tout l'équipement porté et tout l'inventaire transporté sont perdus à jamais** (détruits).
+- Pas de première mort pardonnée, pas d'assurance, pas de zone « sûre » qui annule la règle.
+- Le **personnage survit** : il conserve niveaux, caractéristiques, maîtrises, recettes et son camp de base. Il se réveille au camp, nu.
 
-### 7.2 Full loot & économie de la casse
-- À la mort en zone rouge/noire, l'équipement tombe au sol : ~30 % des objets sont **détruits** (« trash rate »), le reste est lootable → **pompe économique** qui entretient la demande d'artisanat.
-- Un objet équipé est « lié au risque », jamais lié au compte : **tout se vend, tout se perd**.
+### 6.2 En coop
+- Un allié à 0 PV est **agonisant** pendant 2 tours : il peut être ranimé par un sort/consommable. Si le combat se termine (victoire) avec un agonisant, il survit à 1 PV. S'il n'est pas ranimé après 2 tours ou si l'équipe est éliminée → mort réelle, full-loot.
 
-### 7.3 Sanctuaires & logistique
-- Banques uniquement en zones bleues/jaunes ; transporter des marchandises entre zones = gameplay de convoi (risque/récompense).
-- **Poids d'inventaire** : influence les PM hors combat et la fuite.
+### 6.3 Le craft comme filet (décision Q7.3)
+- Le **camp de base** contient un **coffre** (ce qui y est stocké est en sécurité) et des **ateliers de craft**.
+- Le craft garantit de toujours pouvoir refabriquer un **équipement « potable »** (bases communes/magiques) à partir de ressources récoltables en zone facile → on ne reste jamais bloqué, mais les meilleurs objets viennent du **drop** en zones dangereuses.
 
-### 7.4 Mode Hardcore (opt-in)
-- À la création : personnage **Normal** ou **Hardcore**.
-- Hardcore : la mort (en toute zone hors bleue) est **permanente**. Le personnage devient un « Écho » consultable (mémorial, tableau des morts).
-- **Héritage** : 10 % des maîtrises, les recettes apprises et 25 % de la réputation de faction sont transmises au personnage suivant du compte.
-- Serveurs/ladders hardcore saisonniers avec classement « distance parcourue avant la mort ».
-- Récompenses exclusivement **cosmétiques** (pas d'avantage de puissance) pour éviter de forcer la main aux joueurs normaux.
+### 6.4 Conséquences de design
+- L'économie d'objets est une **pompe** : tout finit par être détruit → le loot garde de la valeur indéfiniment.
+- L'UI doit rendre le risque lisible en permanence : valeur estimée de ce qu'on porte, distance au camp, difficulté de la zone.
 
 ---
 
-## 8. Équipement & affixes procéduraux (type Diablo)
+## 7. Équipement & affixes procéduraux (type Diablo)
 
-### 8.1 Slots d'équipement
-Arme, second main (bouclier/focus), casque, plastron, bottes, ceinture, 2 anneaux, amulette, cape, trophée (10–11 slots).
+### 7.1 Slots d'équipement
+Arme, second main (bouclier/focus), casque, plastron, bottes, ceinture, 2 anneaux, amulette, cape, trophée (11 slots).
 
-### 8.2 Raretés
+### 7.2 Raretés (6, décision Q7.1)
 | Rareté | Couleur | Affixes |
 |---|---|---|
 | Commun | blanc | 0 |
 | Magique | bleu | 1 préfixe et/ou 1 suffixe |
 | Rare | jaune | 2–4 affixes |
 | Épique | violet | 4–5 affixes |
-| **Légendaire** | orange | 3–4 affixes + **1 pouvoir unique** (change une règle : « vos poussées créent de la glace », « +1 PA si vous commencez le tour sur une surface de feu »...) |
+| **Légendaire** | orange | 3–4 affixes + **1 pouvoir unique** (change une règle : « vos poussées créent de la glace », « +1 Mana si vous commencez le tour sur une surface de feu »...) — **très rare**, source (drop seul ou aussi craft) à trancher (Q-ouverte §14.2) |
 | **Set** | vert | affixes + bonus de panoplie (à la Dofus) |
 
-### 8.3 Génération procédurale
+### 7.3 Génération procédurale
 - Chaque **base d'objet** (ex. « Épée longue T4 ») a un budget d'affixes et des **pools** de préfixes/suffixes pondérés par : niveau de zone, tier de l'objet, tags (arme/armure/bijou).
-- **Affixes** = { stat, plage de valeurs par tier (T1–T8), poids de tirage, tags d'exclusion }.
-  - Préfixes (offensifs) : +dégâts élémentaires, +dommages critiques, +PA (très rare), +portée, « les dégâts de feu enflamment les surfaces d'huile à coût réduit »...
-  - Suffixes (défensifs/utilitaires) : +vitalité, +résistances, +tacle/fuite, +vitesse de récolte, -coût PW des interactions décor, +prospection...
-- **Affixes environnementaux** (signature du jeu) : une famille d'affixes dédiée aux interactions de terrain (ex. « immunisé aux surfaces de glace », « +2 cases de poussée »).
-- Score d'objet visible (« puissance d'objet ») + comparaison automatique dans l'UI.
+- **Affixe** = { stat, plage de valeurs par tier (T1–T8), poids de tirage, tags d'exclusion }.
+  - Préfixes (offensifs) : +dégâts élémentaires, +critiques, +Mana (très rare), +portée...
+  - Suffixes (défensifs/utilitaires) : +vitalité, +résistances, +tacle/fuite, -coût Énergie des interactions décor, +prospection...
+- **Affixes environnementaux** (signature du jeu) : famille dédiée aux interactions de terrain (« immunisé aux surfaces de glace », « +2 cases de poussée », « vos sorts d'eau gèlent sous la pluie »...).
+- Score de puissance visible + comparaison automatique dans l'UI.
 
-### 8.4 Artisanat & fine-tuning
-- **Craft** : ressources récoltées (zonées par danger) + recette → objet avec affixes tirés aléatoirement (le crafteur choisit la base et le tier, pas les affixes).
-- **Réforge** : re-tirer un affixe (coût croissant) ; **Extraction** : détruire un légendaire pour capturer son pouvoir unique et l'imprimer sur un autre objet (1 fois).
-- **Signature du crafteur** sur l'objet (réputation d'artisan, à l'Albion).
-
-### 8.5 Économie
-- **Marchés régionaux** (pas de marché global) : les prix varient par région → gameplay de transport et de spéculation.
-- Taxes de marché reversées à la faction contrôlant la région.
-- Or comme monnaie ; **gemmes premium uniquement cosmétiques** (à confirmer, Q10.2).
+### 7.4 Sources d'objets (décision Q7.4)
+- **Le drop domine** : monstres, coffres, boss de donjons procéduraux. La qualité/tier des drops suit la difficulté de la zone.
+- **Craft = filet de sécurité + bases** : recettes → objets communs/magiques fiables ; **Réforge** (re-tirer un affixe, coût croissant) pour le fine-tuning des drops.
 
 ---
 
-## 9. Monde, PvE & contenu
+## 8. Monde, exploration & PvE
 
-- **Monde semi-ouvert** : cartes interconnectées écran par écran (à la Dofus) ; biomes : plaines, forêt, marais, montagne, ruines, profondeurs.
-- **Donjons** : instances de 4–6 salles avec combats scénarisés (arènes conçues main, riches en interactions) + boss à mécaniques uniques ; clés de donjon craftables.
-- **Événements dynamiques** : caravanes de faction, invasions de monstres, boss mondiaux en zone noire (déclenchent des combats multi-groupes séquentiels).
-- **Quêtes** : trame principale légère (découverte du monde et des factions) + contrats répétables régionaux ; la narration profonde passe par l'environnement et les saisons de faction.
+### 8.1 Monde continu procédural (décisions Q8.1/Q8.2)
+- **Monde continu** (type Wakfu — pas d'écrans séparés) : régions traversées sans rupture, chargement en streaming par chunks.
+- **Génération procédurale** du monde et des donjons : assemblage de « briques » conçues à la main (patterns de biomes, salles, points d'intérêt) par graine (seed), pour un monde rejouable et surprenant.
+- **Biomes** : plaines, forêt, marais, montagne (twist steampunk : ruines mécaniques), terres gelées (mythologie scandinave), vallées brumeuses (mythologie asiatique).
+- **Difficulté par distance** : plus on s'éloigne du camp de base, plus les monstres, les tiers de loot — et le risque hardcore — augmentent.
 
----
+### 8.2 Donjons
+- Instances procédurales de 4–6 salles (combats + énigmes environnementales + salle au trésor) + **boss à mécaniques uniques** exploitant le décor.
 
-## 10. Multijoueur & architecture réseau
+### 8.3 Narration (décision Q8.3)
+- **Minimale** : pas de trame scénarisée lourde. Le lore (steampunk + mythes nordiques/asiatiques) passe par l'environnement, les objets, les descriptions et les boss.
 
-- **Modèle** : serveur autoritaire, clients Godot ; monde partagé (méga-serveur avec canaux par région) — *ambition à valider, voir Q1.2 : le MVP peut être coop en ligne à petite échelle (serveurs de ~100 joueurs) avant le massivement multijoueur.*
-- Combats instanciés côté serveur : le tour par tour est peu sensible à la latence (avantage majeur du genre).
-- Anti-triche : toute résolution (RNG de loot, jets, dégâts) est serveur ; le client n'affiche que des prévisualisations.
-
----
-
-## 11. Interface & expérience utilisateur
-
-- **HUD combat** : barre de sorts, PA/PM/PW, timeline d'initiative, prévisualisation de dégâts/poussées/surfaces au survol.
-- **Inventaire** : grille avec poids, comparateur d'objets, filtre par affixes, loadouts sauvegardés (« kit zone rouge »).
-- **Carte du monde** : contrôle territorial en temps réel, niveaux de danger, événements actifs.
-- Accessibilité : mode daltonien pour les surfaces (motifs en plus des couleurs), vitesse d'animation des tours réglable, timer de tour adaptable en PvE.
+### 8.4 Récolte & ressources
+- Nœuds de récolte (bois, minerai, plantes, essences) zonés par difficulté ; alimentent le craft du camp de base.
 
 ---
 
-## 12. Direction artistique & audio (première intention)
+## 9. Solo & coop 4 joueurs
 
-- **DA** : stylisée semi-réaliste, lisibilité tactique avant tout (silhouettes claires, surfaces très identifiables). 2D isométrique ou 3D à caméra fixe — à trancher (Q3.2).
-- **Audio** : ambiances par biome, « stingers » d'initiative, sons distinctifs par type de surface (feedback tactique aveugle possible).
-
----
-
-## 13. Implémentation Godot (cadrage technique)
-
-- **Godot 4.x**, GDScript en priorité (C# pour les systèmes chauds si nécessaire : résolution de combat, pathfinding).
-- **Grille & pathfinding** : `TileMapLayer` + `AStarGrid2D` (ou AStar custom si hexagones) ; ligne de vue par lancer de rayon sur grille (algorithme de Bresenham).
-- **Combat** : machine à états (placement → boucle de tours → résolution) ; actions = **pattern Command** (rejouables, annulables en prévisualisation, sérialisables pour le réseau et les replays).
-- **Surfaces** : couche de grille dédiée avec règles de propagation/combinaison data-driven (`Resource` Godot).
-- **Objets & affixes** : définitions en `Resource`/JSON (bases, pools d'affixes, courbes par tier) → génération 100 % data-driven, moddable et équilibrable sans code.
-- **Réseau** : API multiplayer haut niveau de Godot pour le prototype ; serveur dédié headless Godot (`--headless`) ; base de données côté serveur (PostgreSQL) pour personnages/économie.
-- **Sauvegarde** : aucune donnée d'autorité côté client (full loot + hardcore l'exigent).
+- **Solo complet** : tout le contenu est jouable seul (équilibrage dynamique : nombre/PV des monstres selon la taille du groupe).
+- **Coop jusqu'à 4** : un hôte, jusqu'à 3 invités ; monde de l'hôte ; le loot est instancié par joueur (pas de vol de loot entre alliés).
+- **Ordre de développement** : 1) prototype **local solo** (décision Q10.3) → 2) coop en ligne (serveur = hôte autoritaire, l'architecture combat en pattern Command est conçue dès le départ pour être sérialisable réseau).
 
 ---
 
-## 14. Périmètre & jalons (proposition)
+## 10. Interface & expérience utilisateur
 
-1. **Prototype tactique** (le « fun » d'abord) : 1 classe, 10 sorts, grille, PA/PM, 3 surfaces, poussées, 1 arène, PvE local.
-2. **Vertical slice** : 3 classes, loot à affixes (3 raretés), 1 biome, 1 donjon, inventaire/équipement complet.
-3. **Alpha en ligne** : serveur autoritaire, 5v5, zones bleue/rouge, full loot, marché basique.
-4. **Bêta factions** : 3 factions, territoires, sièges, hardcore opt-in, saisons.
-
----
-
-## 15. Questions pour affiner le GDD
-
-### A. Vision & périmètre
-- **Q1.1** — Quelle est l'ambition réseau réelle : MMO persistant (très coûteux), multijoueur en ligne à petite échelle (~50–200 joueurs par serveur), coop 2–8 joueurs, ou d'abord un jeu solo/coop avec du PvP en arène ? C'est LA décision structurante du projet.
-    On va finalement opter pour du dolo/coop a 4 en PvM, pour l'instant on oublie le mode faction MMO trop ambitieux.
-- **Q1.2** — Taille de l'équipe et compétences disponibles (code, art 2D/3D, réseau, serveur) ? Budget/temps visé pour un premier jouable ?
-    Equipe de 4 joueurs max. Les compétences seront moitié "play what you wear", moitié sort dépendant de la classe. un kit fix de sorts par classe et pour quelques sorts, ils dépendront des équipements du joueur: toutes les classes peuvent jouer toutes les armes mais auront des sort qui diffèrent un peut selon les classes (par exemple un pyromant avec une épée mais aura le sort "épée magique" tandis que le sylve avec la meme épée aura le sort "estoc") donc la variété des sort dépendra du nombre de classes et du nombre d'archétype d'item differents.
-- **Q1.3** — Modèle économique : premium (achat unique), free-to-play + cosmétiques, abonnement ? (impacte le design de l'économie et du hardcore)
-    Free to play pour l'instant.
-- **Q1.4** — Y a-t-il des jeux de référence supplémentaires dont tu veux copier un système précis (ex. Wakfu, Path of Exile, Baldur's Gate 3) ?
-    wakfu pour les varietes de sort et d'interraction entre les sorts differents, les classes tournent autour de mechaniques de classes tres importantes dans le game play.
-### B. Combat
-- **Q2.1** — Grille carrée (DOS2), losange/isométrique (Dofus) ou hexagonale ? As-tu une préférence de lisibilité/feeling ?
-    losange/isométrique (Dofus).
-- **Q2.2** — Le trio PA/PM te convient-il, ou préfères-tu un pool d'action unifié (à la DOS2 : tout coûte des points d'action) ? Faut-il garder les PW (3e ressource) ?
-    vie/mana/energie. mana pour les actions type spell etc, energie pour deplacement et interraction avec le décor (pousser un tonneau etc).
-- **Q2.3** — Timer de tour strict (PvP nerveux) ou tours longs/illimités en PvE ?
-    Tour long: on part sur une base de 2 minutes par tour de chaques joueurs.
-- **Q2.4** — Tour par tour strictement séquentiel par personnage, ou par équipe (toute l'équipe joue en même temps, à la DOS2 en mode round) ?
-    Tour par tour strictement séquentiel par personnage
-- **Q2.5** — Combien de joueurs max dans un même combat (5v5 ? 8v8 ?) et faut-il des combats « rejoignables » (aggro d'un combat en cours, comme Albion, ou combats verrouillés comme Dofus) ?
-    4 joueurs, et jusque 10 unités enemis.
-
-### C. Environnement interactif
-- **Q3.1** — Jusqu'où pousser la simulation : surfaces + poussées + destructibles suffisent-ils, ou veux-tu aussi hauteur/escalade, météo dynamique, téléportation d'objets ?
-    météo oui, téleportation d'objets: certaines classes auront des sorts comme ca.
-- **Q3.2** — 2D isométrique (moins cher, très lisible) ou 3D caméra tactique (plus cher, permet la vraie verticalité) ?
-    2D isométrique
-- **Q3.3** — L'IA des monstres doit-elle exploiter agressivement le décor dès le début, ou est-ce un raffinement post-MVP ?
-    l'IA des monstres doit exploiter l'environement si elle le peut, dépendant des actions et sorts que peuvent faire chaques monstres.
-
-### D. Classes & progression
-- **Q4.1** — Classes fixes (à la Dofus) ou système sans classe basé sur l'équipement porté (à l'Albion : « you are what you wear ») ? Les deux se marient différemment avec le full loot.
-  les deux comme précisé dans q1.2
-- **Q4.2** — Niveau max et durée de progression visée (heures pour atteindre le « endgame ») ?
-  pour l'instant 100 et durée de 1 mois pour etre MAX
-- **Q4.3** — Les 5 archétypes proposés (§4.1) te parlent-ils ? Lesquels garder/modifier ?
-  c bien pour l'instant
-
-### E. Factions
-- **Q5.1** — Trois factions prédéfinies, ou des guildes de joueurs qui revendiquent elles-mêmes les territoires (modèle Albion pur) ? Ou un hybride (factions + guildes internes) ?
-  on enleve les factions
-- **Q5.2** — Les sièges de territoire en « batailles tour par tour 5v5 sur points de contrôle » te semblent-ils la bonne résolution, ou imagines-tu de grandes batailles uniques ?
-   on enleve les factions
-- **Q5.3** — Le PvP même-faction doit-il être possible (hors-la-loi) ou strictement interdit ?
-   on enleve les factions
-
-### F. Hardcore & full loot
-- **Q6.1** — Le hardcore (mort permanente) est-il un mode opt-in par personnage, un serveur dédié, ou la règle pour tout le monde ?
-  le hardcore est présent partout, des le début du jeu. tu meurs: tu perds ton loot a jamais.
-- **Q6.2** — En full loot, quel « trash rate » (part d'objets détruits à la mort) te semble juste ? 0 %, 30 %, 50 % ?
-- **Q6.3** — Faut-il un filet de sécurité pour débutants (assurance d'objet, première mort pardonnée, zones bleues étendues) ?
-  non hardcore des le début
-- **Q6.4** — L'héritage hardcore proposé (§7.4 : 10 % maîtrises, recettes, 25 % réputation) est-il trop généreux, pas assez ?
-
-### G. Items & affixes
-- **Q7.1** — Combien de raretés veux-tu vraiment ? Le schéma Diablo complet (6 raretés dont sets) ou plus resserré (3–4) ?
-  6 c'est bien
-- **Q7.2** — Les légendaires « qui changent les règles » doivent-ils être trouvés uniquement (drop) ou aussi craftables/extractibles ?
-  je sais pas encore, mais ils doivent etre rare
-- **Q7.3** — Full loot + affixes procéduraux = perdre un objet unique fait très mal. Assumes-tu cette brutalité, ou veux-tu des mécanismes d'atténuation (empreinte de recette, re-craft à l'identique coûteux) ?
-  le craft permettra de toujours pouvoir avoir un équipement "potable", mais full harcore c'est ce que je veux.
-- **Q7.4** — Le craft doit-il être la source *principale* d'objets (Albion) ou le drop domine-t-il (Diablo) ?
-    drop doit dominer
-
-### H. Monde & contenu
-- **Q8.1** — Monde en cartes interconnectées écran par écran (Dofus) ou zones continues avec chargements ?
-    zone continue type wakfu
-- **Q8.2** — Génération procédurale du monde/donjons, ou tout est conçu à la main ?
-    génération procedurale
-- **Q8.3** — Quelle importance pour la narration/quêtes : minimale (sandbox pur) ou trame scénarisée notable ?
-    minimal
-
-### I. Direction artistique
-- **Q9.1** — As-tu une référence visuelle (Dofus cartoon ? DOS2 réaliste ? pixel art ?) et des ressources art disponibles ?
-  pixel art pour l'instant
-- **Q9.2** — Univers : médiéval-fantasy classique, ou envie d'un twist (post-apo, steampunk, mythologie précise) ?
-  médiéval-fantasy, avec un twist steampunk et mythologie skandinave et asiatique.
-
-### J. Production & technique
-- **Q10.1** — GDScript seul, ou es-tu à l'aise pour mixer avec C# ?
-  c# aussi
-- **Q10.2** — Confirmation : monétisation cosmétique uniquement ? (impacte l'économie full loot)
- F2P
-- **Q10.3** — Quel est le premier livrable que tu veux construire : le prototype de combat local (recommandé), ou directement une base réseau ?
-  proto local en solo pour l'instant
+- **HUD combat** : barre de sorts (kit de classe + sorts d'arme, visuellement distingués), Vie/Mana/Énergie, timeline d'initiative, timer de tour (2 min), prévisualisation dégâts/poussées/surfaces au survol.
+- **Inventaire** : grille avec poids, comparateur d'objets, filtre par affixes, **indicateur de valeur à risque** (ce que je perds si je meurs).
+- **Carte du monde** : brouillard de découverte, difficulté des régions, météo, position du camp.
+- Accessibilité : mode daltonien pour les surfaces (motifs en plus des couleurs), vitesse d'animation des tours réglable.
 
 ---
 
-*Document vivant : chaque réponse aux questions ci-dessus déclenchera une mise à jour de la section correspondante et une montée de version (0.2, 0.3, ...).*
+## 11. Direction artistique & audio
+
+- **Pixel art** isométrique 2D (décisions Q3.2/Q9.1) : lisibilité tactique avant tout — silhouettes claires, surfaces identifiables par texture ET motif.
+- **Univers** : médiéval-fantasy avec **twist steampunk** (machines, vapeur, engrenages) et influences **mythologie scandinave** (jotuns, runes, biome gelé) et **asiatique** (esprits, sanctuaires, biome brumeux) (décision Q9.2).
+- **Audio** : ambiances par biome et météo, « stingers » d'initiative, sons distinctifs par type de surface.
+
+---
+
+## 12. Cadrage technique Godot
+
+- **Godot 4.x**, **GDScript + C#** (décision Q10.1) : GDScript pour le gameplay/UI (itération rapide), C# pour les systèmes chauds (génération procédurale du monde, résolution de combat, pathfinding) si profilage le justifie.
+- **Grille & pathfinding** : `TileMapLayer` isométrique (losange) + `AStarGrid2D` ; ligne de vue par Bresenham sur grille.
+- **Combat** : machine à états (exploration → placement → boucle de tours → résolution) ; actions = **pattern Command** (prévisualisables, annulables, sérialisables pour le futur réseau et les replays).
+- **Surfaces & météo** : couches de grille dédiées, règles de propagation/combinaison **data-driven** (`Resource` Godot / JSON).
+- **Objets & affixes** : définitions data-driven (bases, pools, courbes par tier) → équilibrage sans code.
+- **Monde procédural** : génération par chunks avec seed ; briques assemblées (rooms/patterns) + bruit (biomes).
+- **Sauvegarde** : fichier local chiffré/checksummé (hardcore : limiter la triche naïve du save-scumming — sauvegarde à la volée, une seule slot par personnage).
+
+Le détail complet (architecture, schémas de données, ordre des tâches, critères d'acceptation) est dans **`PLAN_IMPLEMENTATION.md`**.
+
+---
+
+## 13. Périmètre & jalons
+
+| Jalon | Contenu | Référence plan |
+|---|---|---|
+| **M1 — Prototype tactique local** | 1 classe (Pyromant), 8 sorts, grille iso, Vie/Mana/Énergie, 3 surfaces, poussées, 1 arène fixe, IA basique, PvE solo | Phases 0–7 |
+| **M2 — Boucle hardcore** | loot à affixes (4 raretés), inventaire/équipement, mort full-loot, camp + coffre + craft basique | Phases 8–10 |
+| **M3 — Vertical slice** | 2e classe, sorts d'arme (matrice classe×arme), monde procédural 2 biomes, météo, 1 donjon, boss | Phases 11–13 |
+| **M4 — Coop** | coop en ligne 4 joueurs, équilibrage groupe, loot instancié | Phase 14 |
+
+---
+
+## 14. Journal des décisions & questions ouvertes
+
+### 14.1 Décisions actées (v1.0 — réponses aux questions de la v0.1)
+| Sujet | Décision |
+|---|---|
+| Ambition réseau | **Solo/coop 4 en PvM** ; factions & MMO abandonnés |
+| Modèle éco | Free-to-play (détail hors périmètre) |
+| Références | + **Wakfu** : variété de sorts, interactions inter-sorts, mécaniques de classe centrales |
+| Grille | **Losange/isométrique** (Dofus) |
+| Ressources | **Vie / Mana (sorts) / Énergie (déplacement + interactions décor)** |
+| Timer | Tours longs : **2 min/joueur** |
+| Séquencement | Strictement **séquentiel par personnage** |
+| Taille combat | **4 joueurs vs jusqu'à 10 ennemis** |
+| Simulation | Surfaces + poussées + destructibles + **météo** + **téléportation d'objets** (sorts de classe) |
+| Rendu | **2D isométrique pixel art** |
+| IA | Les monstres **exploitent le décor dès le début**, selon leurs capacités |
+| Classes | **Hybride** : kit fixe par classe + sorts d'arme variant par classe ; 5 archétypes validés |
+| Progression | Niveau max 100, ~**1 mois** pour le max |
+| Factions | **Supprimées** |
+| Hardcore | **Partout, dès le début** : mort = perte définitive du loot porté ; pas de filet |
+| Raretés | **6** (schéma Diablo complet) |
+| Craft vs drop | **Drop domine** ; craft = filet « équipement potable » |
+| Monde | **Continu type Wakfu**, **génération procédurale** |
+| Narration | **Minimale** |
+| DA | Pixel art ; médiéval-fantasy + steampunk + mythologies scandinave/asiatique |
+| Langages | GDScript **+ C#** |
+| Premier livrable | **Prototype local solo** |
+
+### 14.2 Questions encore ouvertes (à trancher en cours de production)
+1. **Légendaires** : uniquement drop, ou aussi craftables/extractibles ? (décidé : « très rares » ; source exacte à trancher — recommandation : drop only au début, extraction de pouvoir ajoutée en M3+).
+2. **Permadeath total** : la v1.0 acte « mort = perte du loot, le personnage survit ». Un mode optionnel « permadeath du personnage » (ladder) pourra être ajouté plus tard.
+3. **Trash rate** : sans PvP, les objets du mort sont simplement **détruits** (100 %) — à revalider si un mode récupération de corps est souhaité.
+4. **Monétisation F2P** : cosmétiques ? à définir bien après le prototype.
+
+---
+
+*Document vivant — version 1.0. Toute nouvelle décision met à jour la section concernée et le journal §14.*
