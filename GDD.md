@@ -259,57 +259,88 @@ Arme, second main (bouclier/focus), casque, plastron, bottes, ceinture, 2 anneau
 
 ### A. Vision & périmètre
 - **Q1.1** — Quelle est l'ambition réseau réelle : MMO persistant (très coûteux), multijoueur en ligne à petite échelle (~50–200 joueurs par serveur), coop 2–8 joueurs, ou d'abord un jeu solo/coop avec du PvP en arène ? C'est LA décision structurante du projet.
+    On va finalement opter pour du dolo/coop a 4 en PvM, pour l'instant on oublie le mode faction MMO trop ambitieux.
 - **Q1.2** — Taille de l'équipe et compétences disponibles (code, art 2D/3D, réseau, serveur) ? Budget/temps visé pour un premier jouable ?
+    Equipe de 4 joueurs max. Les compétences seront moitié "play what you wear", moitié sort dépendant de la classe. un kit fix de sorts par classe et pour quelques sorts, ils dépendront des équipements du joueur: toutes les classes peuvent jouer toutes les armes mais auront des sort qui diffèrent un peut selon les classes (par exemple un pyromant avec une épée mais aura le sort "épée magique" tandis que le sylve avec la meme épée aura le sort "estoc") donc la variété des sort dépendra du nombre de classes et du nombre d'archétype d'item differents.
 - **Q1.3** — Modèle économique : premium (achat unique), free-to-play + cosmétiques, abonnement ? (impacte le design de l'économie et du hardcore)
+    Free to play pour l'instant.
 - **Q1.4** — Y a-t-il des jeux de référence supplémentaires dont tu veux copier un système précis (ex. Wakfu, Path of Exile, Baldur's Gate 3) ?
-
+    wakfu pour les varietes de sort et d'interraction entre les sorts differents, les classes tournent autour de mechaniques de classes tres importantes dans le game play.
 ### B. Combat
 - **Q2.1** — Grille carrée (DOS2), losange/isométrique (Dofus) ou hexagonale ? As-tu une préférence de lisibilité/feeling ?
+    losange/isométrique (Dofus).
 - **Q2.2** — Le trio PA/PM te convient-il, ou préfères-tu un pool d'action unifié (à la DOS2 : tout coûte des points d'action) ? Faut-il garder les PW (3e ressource) ?
+    vie/mana/energie. mana pour les actions type spell etc, energie pour deplacement et interraction avec le décor (pousser un tonneau etc).
 - **Q2.3** — Timer de tour strict (PvP nerveux) ou tours longs/illimités en PvE ?
+    Tour long: on part sur une base de 2 minutes par tour de chaques joueurs.
 - **Q2.4** — Tour par tour strictement séquentiel par personnage, ou par équipe (toute l'équipe joue en même temps, à la DOS2 en mode round) ?
+    Tour par tour strictement séquentiel par personnage
 - **Q2.5** — Combien de joueurs max dans un même combat (5v5 ? 8v8 ?) et faut-il des combats « rejoignables » (aggro d'un combat en cours, comme Albion, ou combats verrouillés comme Dofus) ?
+    4 joueurs, et jusque 10 unités enemis.
 
 ### C. Environnement interactif
 - **Q3.1** — Jusqu'où pousser la simulation : surfaces + poussées + destructibles suffisent-ils, ou veux-tu aussi hauteur/escalade, météo dynamique, téléportation d'objets ?
+    météo oui, téleportation d'objets: certaines classes auront des sorts comme ca.
 - **Q3.2** — 2D isométrique (moins cher, très lisible) ou 3D caméra tactique (plus cher, permet la vraie verticalité) ?
+    2D isométrique
 - **Q3.3** — L'IA des monstres doit-elle exploiter agressivement le décor dès le début, ou est-ce un raffinement post-MVP ?
+    l'IA des monstres doit exploiter l'environement si elle le peut, dépendant des actions et sorts que peuvent faire chaques monstres.
 
 ### D. Classes & progression
 - **Q4.1** — Classes fixes (à la Dofus) ou système sans classe basé sur l'équipement porté (à l'Albion : « you are what you wear ») ? Les deux se marient différemment avec le full loot.
+  les deux comme précisé dans q1.2
 - **Q4.2** — Niveau max et durée de progression visée (heures pour atteindre le « endgame ») ?
+  pour l'instant 100 et durée de 1 mois pour etre MAX
 - **Q4.3** — Les 5 archétypes proposés (§4.1) te parlent-ils ? Lesquels garder/modifier ?
+  c bien pour l'instant
 
 ### E. Factions
 - **Q5.1** — Trois factions prédéfinies, ou des guildes de joueurs qui revendiquent elles-mêmes les territoires (modèle Albion pur) ? Ou un hybride (factions + guildes internes) ?
+  on enleve les factions
 - **Q5.2** — Les sièges de territoire en « batailles tour par tour 5v5 sur points de contrôle » te semblent-ils la bonne résolution, ou imagines-tu de grandes batailles uniques ?
+   on enleve les factions
 - **Q5.3** — Le PvP même-faction doit-il être possible (hors-la-loi) ou strictement interdit ?
+   on enleve les factions
 
 ### F. Hardcore & full loot
 - **Q6.1** — Le hardcore (mort permanente) est-il un mode opt-in par personnage, un serveur dédié, ou la règle pour tout le monde ?
+  le hardcore est présent partout, des le début du jeu. tu meurs: tu perds ton loot a jamais.
 - **Q6.2** — En full loot, quel « trash rate » (part d'objets détruits à la mort) te semble juste ? 0 %, 30 %, 50 % ?
 - **Q6.3** — Faut-il un filet de sécurité pour débutants (assurance d'objet, première mort pardonnée, zones bleues étendues) ?
+  non hardcore des le début
 - **Q6.4** — L'héritage hardcore proposé (§7.4 : 10 % maîtrises, recettes, 25 % réputation) est-il trop généreux, pas assez ?
 
 ### G. Items & affixes
 - **Q7.1** — Combien de raretés veux-tu vraiment ? Le schéma Diablo complet (6 raretés dont sets) ou plus resserré (3–4) ?
+  6 c'est bien
 - **Q7.2** — Les légendaires « qui changent les règles » doivent-ils être trouvés uniquement (drop) ou aussi craftables/extractibles ?
+  je sais pas encore, mais ils doivent etre rare
 - **Q7.3** — Full loot + affixes procéduraux = perdre un objet unique fait très mal. Assumes-tu cette brutalité, ou veux-tu des mécanismes d'atténuation (empreinte de recette, re-craft à l'identique coûteux) ?
+  le craft permettra de toujours pouvoir avoir un équipement "potable", mais full harcore c'est ce que je veux.
 - **Q7.4** — Le craft doit-il être la source *principale* d'objets (Albion) ou le drop domine-t-il (Diablo) ?
+    drop doit dominer
 
 ### H. Monde & contenu
 - **Q8.1** — Monde en cartes interconnectées écran par écran (Dofus) ou zones continues avec chargements ?
+    zone continue type wakfu
 - **Q8.2** — Génération procédurale du monde/donjons, ou tout est conçu à la main ?
+    génération procedurale
 - **Q8.3** — Quelle importance pour la narration/quêtes : minimale (sandbox pur) ou trame scénarisée notable ?
+    minimal
 
 ### I. Direction artistique
 - **Q9.1** — As-tu une référence visuelle (Dofus cartoon ? DOS2 réaliste ? pixel art ?) et des ressources art disponibles ?
+  pixel art pour l'instant
 - **Q9.2** — Univers : médiéval-fantasy classique, ou envie d'un twist (post-apo, steampunk, mythologie précise) ?
+  médiéval-fantasy, avec un twist steampunk et mythologie skandinave et asiatique.
 
 ### J. Production & technique
 - **Q10.1** — GDScript seul, ou es-tu à l'aise pour mixer avec C# ?
+  c# aussi
 - **Q10.2** — Confirmation : monétisation cosmétique uniquement ? (impacte l'économie full loot)
+ F2P
 - **Q10.3** — Quel est le premier livrable que tu veux construire : le prototype de combat local (recommandé), ou directement une base réseau ?
+  proto local en solo pour l'instant
 
 ---
 
