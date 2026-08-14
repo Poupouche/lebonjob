@@ -34,7 +34,7 @@ res://
 │   ├── combat/                # machine à états, tours, actions (Command)
 │   ├── entities/              # personnage, monstre, objet de terrain
 │   ├── items/                 # génération d'items, inventaire, équipement
-│   ├── world/                 # génération procédurale, chunks, météo
+│   ├── world/                 # génération de la carte de donjon, nœuds, météo
 │   ├── ai/                    # IA des monstres
 │   └── ui/                    # HUD, inventaire, menus
 ├── scenes/                    # scènes .tscn (miroir de scripts/)
@@ -294,40 +294,45 @@ Tâches :
 
 ---
 
-## PHASE 11 — Monde continu procédural (exploration)
+## PHASE 11 — Carte de donjon à embranchements (exploration roguelite)
 
-**Objectif** : sortir de l'arène de test : un monde continu type Wakfu, généré par seed, exploré en temps réel.
+**Objectif** : sortir de l'arène de test : l'exploration devient une **run** dans un donjon à étages (inspiration **Slay the Spire** / **Forbidden Sanctum** de PoE) — on part du camp, on avance nœud par nœud sur une carte à chemins multiples en choisissant sa route, et on tente d'atteindre la fin.
 
 Tâches :
-1. **Exploration temps réel** : déplacement libre du personnage (8 directions, `CharacterBody2D`) sur le monde isométrique ; la grille de combat n'existe qu'en combat.
-2. **Génération par chunks** : monde découpé en chunks (ex. 32×32 tuiles) générés à la demande depuis la **seed** ; pipeline : bruit (FBM) → biome par région (2 biomes v1 : plaines, forêt) → placement de patterns conçus main (bosquets, ruines, camps de monstres, nœuds de récolte) via WFC simple ou stamping pondéré. **Écrire cette couche en C# si le profilage GDScript montre > 16 ms/chunk.**
-3. **Difficulté par distance** : `danger_level = f(distance au camp)` → tier des monstres et du loot ; affiché sur l'UI.
-4. **Spawns & déclenchement de combat** : groupes de monstres visibles sur la carte (2–10 unités) ; contact → transition vers le combat ; **l'arène est générée à partir du décor local** (obstacles/objets/surfaces/météo du lieu, en garantissant ≥ 3 interactifs et des zones de placement valides).
-5. **Météo du monde** : cycle météo par région (horloge de jeu) ; la météo courante est passée au combat (Phase 5).
-6. **Nœuds de récolte** : interaction en exploration → ressources de craft (alimente la Phase 10).
-7. Carte du monde (UI) : brouillard de découverte, position du camp, niveau de danger, météo.
+1. **Génération de la carte** : `DungeonMapGenerator` (classe pure `RefCounted`, seedée via `Rng`) produisant un **graphe orienté acyclique** : N étages (ex. 10–12 pour un donjon tier 1), 3–5 nœuds par étage, chaque nœud connecté à 1–3 nœuds de l'étage suivant. **Garanties structurelles** : tout nœud mène à la fin, ≥ 2 chemins complets distincts, pas de croisements d'arêtes illisibles.
+2. **Types de nœuds** data-driven (`NodeTypeData` `.tres` dans `res://data/dungeon/`) : **combat**, **combat d'élite**, **trésor**, **repos/bivouac** (soin partiel + accès craft/réforge léger), **événement**, **récolte** (ressources de craft, alimente la Phase 10). Distribution pondérée par étage avec règles de placement (pas deux élites adjacentes, un repos garanti à l'avant-dernier étage, premier étage = combat simple...).
+3. **UI de carte** : affichage des étages et chemins (icônes par type), nœud courant, nœuds accessibles cliquables, chemin déjà parcouru ; certains nœuds masqués « ? » (type révélé à l'entrée) ; niveau de danger et modificateurs de run visibles.
+4. **Difficulté par étage** : `danger_level = f(étage, tier du donjon)` → tier des monstres et du loot ; affiché sur l'UI.
+5. **Arènes générées par nœud** : entrer dans un nœud combat/élite génère l'arène tactique depuis le **thème/biome du donjon** (2 thèmes v1 : plaines, forêt) + la **météo de l'étage** (tirée par seed, passée au combat — Phase 5), en garantissant ≥ 3 interactifs et des zones de placement valides.
+6. **Boucle de run** : entrée depuis le camp (choix du donjon), avancée **sans retour en arrière** ; fin du donjon atteinte → retour au camp avec le butin ; défaite → mort hardcore (Phase 10 : stuff porté et inventaire perdus). Option d'**extraction** uniquement aux nœuds de repos (abandonner la run en gardant le butin), activable par donnée.
+7. **`RunState` dans `GameState`** : seed de la carte, nœud courant, nœuds visités, modificateurs de run ; sérialisé par `SaveManager` avec **écriture immédiate à chaque choix de nœud** (anti save-scumming, cohérent Phase 10).
 
 **Critères d'acceptation** :
-- [ ] Même seed → même monde (test automatisé sur les données de 10 chunks).
-- [ ] On marche du camp vers l'extérieur sans écran de chargement ; les monstres et le loot deviennent plus forts avec la distance.
-- [ ] Un combat déclenché dans la forêt sous la pluie produit une arène avec des arbres (obstacles), des interactifs et la météo pluie active.
-- [ ] Génération d'un chunk < 16 ms en moyenne (pas de freeze perceptible).
+- [ ] Même seed → même carte (test GUT sur la structure du graphe pour 10 seeds).
+- [ ] Toute carte générée respecte les garanties structurelles et les règles de placement des types (tests automatisés sur un lot de seeds).
+- [ ] On joue une run de bout en bout : choisir ses nœuds, enchaîner combats/trésor/repos et atteindre la fin ; impossible de revenir à un étage précédent.
+- [ ] Tuer le jeu et recharger en cours de run restaure exactement carte, position et nœuds visités ; impossible de re-tirer une autre carte.
+- [ ] Un nœud combat en thème forêt sous la pluie produit une arène avec des arbres (obstacles), des interactifs et la météo pluie active.
 
 ---
 
-## PHASE 12 — Donjons procéduraux & boss
+## PHASE 12 — Événements, élites, modificateurs de run & boss
 
-**Objectif** : le contenu endgame : donjons générés, boss à mécaniques.
+**Objectif** : donner du poids aux choix de chemin de la Phase 11 : événements à choix, élites, bénédictions/malédictions de run, et le boss qui clôt le donjon.
 
 Tâches :
-1. Générateur de donjons : graphe de 4–6 salles (combat / énigme environnementale / trésor / boss) ; salles = templates conçus main instanciés avec variations (seed).
-2. Entrées de donjon placées dans le monde (Phase 11), tier lié au danger local.
-3. **1 boss** : « Forgeron de Surtr » (thème nordique/steampunk) — mécaniques scriptées par données autant que possible : phases par seuil de PV, invocations, manipulation massive de surfaces (le sol s'enflamme par motifs télégraphiés un tour à l'avance).
-4. Table de loot de donjon : garantie de rare+, chance d'épique, ressources de craft rares.
+1. **Événements** (`EventData` `.tres`) : scénettes à 2–3 choix avec coûts/risques/récompenses (ex. sacrifier des PV contre un objet, coffre potentiellement piégé, autel qui bénit ou maudit) ; 6–8 événements v1 ; résolution 100 % data-driven via des effets génériques (gain/perte PV/ressources/items, ajout de modificateur de run).
+2. **Bénédictions & malédictions de run** (inspiration Forbidden Sanctum) : modificateurs temporaires portés par `RunState` et appliqués aux combats suivants (ex. « +10 % dégâts Feu », « les monstres gagnent +1 PM ») ; implémentés comme règles enregistrées s'abonnant à l'EventBus (préfigure les pouvoirs légendaires de la Phase 13) ; expirent à la fin de la run ; visibles sur l'UI de carte.
+3. **Élites** : monstres porteurs de 1–2 **modificateurs d'élite** data-driven (ex. « Enflammé : laisse du feu sur son passage », « Colosse : immunisé aux poussées ») ; loot amélioré garanti.
+4. **1 boss** : « Forgeron de Surtr » (thème nordique/steampunk) — dernier nœud du donjon ; mécaniques scriptées par données autant que possible : phases par seuil de PV, invocations, manipulation massive de surfaces (le sol s'enflamme par motifs télégraphiés un tour à l'avance).
+5. **Loot par type de nœud** : tables data-driven (trésor, élite, boss) ; le boss garantit du rare+, chance d'épique, ressources de craft rares ; récompense de complétion croissante avec le tier du donjon.
+6. **Tiers de donjons** : plusieurs donjons sélectionnables depuis le camp, à danger/étages/récompenses croissants (v1 : 2 tiers, le tier 2 se débloque en finissant le tier 1).
 
 **Critères d'acceptation** :
-- [ ] Un donjon complet (entrée → salles → boss → trésor) se joue de bout en bout ; deux seeds donnent deux agencements différents.
+- [ ] Une run complète (entrée → choix de chemins → événements/élites/trésors/repos → boss → récompenses au camp) se joue de bout en bout ; deux seeds donnent deux cartes différentes.
 - [ ] Le boss télégraphie ses zones un tour à l'avance et change de comportement par phase.
+- [ ] Une malédiction prise à un événement affecte réellement les combats suivants de la run et disparaît à la fin de la run.
+- [ ] Tests GUT : résolution d'événements, application/expiration des modificateurs de run, tables de loot par type de nœud.
 
 ---
 
@@ -358,7 +363,7 @@ Tâches :
 Tâches :
 1. API multiplayer **Godot 4** : `ENetMultiplayerPeer` + `MultiplayerAPI` (RPCs `@rpc`), avec `MultiplayerSpawner`/`MultiplayerSynchronizer` pour la réplication de scène (ne PAS utiliser les patterns Godot 3). **Hôte autoritaire** : les invités envoient leurs `CombatAction` sérialisées (déjà prêtes depuis la Phase 3), l'hôte valide/exécute/rediffuse.
 2. Lobby simple : héberger / rejoindre par IP ou code (pas de matchmaking).
-3. Exploration synchronisée (positions, spawns, météo, seed partagée) ; combat : jusqu'à 4 joueurs dans la timeline, chacun jouant son tour (les autres voient les previews de l'actif).
+3. Exploration synchronisée (carte de donjon partagée : seed commune, choix du prochain nœud par l'hôte, nœuds visités répliqués) ; combat : jusqu'à 4 joueurs dans la timeline, chacun jouant son tour (les autres voient les previews de l'actif).
 4. **Agonie coop** (GDD §6.2) : 2 tours pour ranimer, sorts/consommables de résurrection.
 5. Équilibrage dynamique : PV/nombre de monstres selon la taille du groupe (courbe en donnée).
 6. **Loot instancié par joueur** ; le hardcore s'applique individuellement.
@@ -412,8 +417,8 @@ Tâches :
 | 8 | Items + affixes + inventaire + loot | — |
 | 9 | Matrice classe×arme + Sylve + mécaniques | — |
 | 10 | Hardcore + camp + craft + sauvegarde + XP | **M2 — boucle hardcore** |
-| 11 | Monde continu procédural + météo monde | — |
-| 12 | Donjons procéduraux + boss | — |
+| 11 | Carte de donjon à embranchements (roguelite) | — |
+| 12 | Événements + élites + modificateurs de run + boss | — |
 | 13 | Légendaires/sets + 5 classes + 4 biomes | **M3 — vertical slice** |
 | 14 | Coop en ligne 4 joueurs | **M4 — coop** |
 
